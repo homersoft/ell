@@ -86,6 +86,10 @@ bool l_dbus_interface_property(struct l_dbus_interface *interface,
 bool l_dbus_property_changed(struct l_dbus *dbus, const char *path,
 				const char *interface, const char *property);
 
+bool l_dbus_signal_emit(struct l_dbus *dbus, const char *path,
+				const char *interface_name, const char *signal_name,
+				const char *signature, ...);
+
 #ifdef __cplusplus
 }
 #endif
