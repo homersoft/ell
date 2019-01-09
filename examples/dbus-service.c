@@ -87,10 +87,14 @@ static struct l_dbus_message *test_method_call(struct l_dbus *dbus,
 {
 	struct l_dbus_message *reply;
 
-	l_info("Method Call");
+	uint32_t argument;
+	l_dbus_message_get_arguments(message, "u", &argument);
+	l_info("Method Call: %" PRIu32 "", argument);
 
 	reply = l_dbus_message_new_method_return(message);
 	l_dbus_message_set_arguments(reply, "");
+
+	l_dbus_signal_emit(dbus, "/test", "org.test", "MethodCalled", "u", argument);
 
 	return reply;
 }
@@ -167,7 +171,10 @@ static struct l_dbus_message *test_int_setter(struct l_dbus *dbus,
 static void setup_test_interface(struct l_dbus_interface *interface)
 {
 	l_dbus_interface_method(interface, "MethodCall", 0,
-				test_method_call, "", "");
+				test_method_call, "", "u", "argument");
+
+    l_dbus_interface_signal(interface, "MethodCalled", 0,
+				"u", "argument");
 
 	l_dbus_interface_property(interface, "String", 0, "s",
 					test_string_getter, test_string_setter);

@@ -125,12 +125,19 @@ struct property_change_record {
 	struct l_queue *properties;
 };
 
+struct user_signal_record {
+	char *path;
+	struct object_node *object;
+	struct l_dbus_message *message;
+};
+
 struct _dbus_object_tree {
 	struct l_hashmap *interfaces;
 	struct l_hashmap *objects;
 	struct object_node *root;
 	struct l_queue *object_managers;
 	struct l_queue *property_changes;
+	struct l_queue *user_signals;
 	struct l_idle *emit_signals_work;
 	bool flushing;
 };
@@ -551,6 +558,15 @@ static void property_change_record_free(void *data)
 	l_free(rec);
 }
 
+static void user_signal_record_free(void *data)
+{
+	struct user_signal_record *rec = data;
+
+	l_free(rec->path);
+	l_dbus_message_unref(rec->message);
+	l_free(rec);
+}
+
 static void properties_setup_func(struct l_dbus_interface *);
 static void object_manager_setup_func(struct l_dbus_interface *);
 
@@ -570,6 +586,7 @@ struct _dbus_object_tree *_dbus_object_tree_new()
 	tree->root = l_new(struct object_node, 1);
 
 	tree->property_changes = l_queue_new();
+	tree->user_signals = l_queue_new();
 
 	_dbus_object_tree_register_interface(tree, L_DBUS_INTERFACE_PROPERTIES,
 						properties_setup_func, NULL,
@@ -628,6 +645,8 @@ void _dbus_object_tree_free(struct _dbus_object_tree *tree)
 	l_queue_destroy(tree->object_managers, object_manager_free);
 
 	l_queue_destroy(tree->property_changes, property_change_record_free);
+
+	l_queue_destroy(tree->user_signals, user_signal_record_free);
 
 	if (tree->emit_signals_work)
 		l_idle_remove(tree->emit_signals_work);
@@ -1100,6 +1119,22 @@ static bool emit_properties_changed(void *data, void *user_data)
 	return true;
 }
 
+static bool emit_user_signal(void *data, void *user_data)
+{
+	struct user_signal_record *rec = data;
+	struct emit_signals_data *es = user_data;
+
+	if (es->node && rec->object != es->node)
+		return false;
+
+	l_dbus_send(es->dbus, rec->message);
+	rec->message = NULL;
+
+	user_signal_record_free(rec);
+
+	return true;
+}
+
 void _dbus_object_tree_signals_flush(struct l_dbus *dbus, const char *path)
 {
 	struct _dbus_object_tree *tree = _dbus_get_tree(dbus);
@@ -1136,6 +1171,12 @@ void _dbus_object_tree_signals_flush(struct l_dbus *dbus, const char *path)
 				emit_properties_changed, &data);
 
 	if (!l_queue_isempty(tree->property_changes))
+		all_done = false;
+
+	l_queue_foreach_remove(tree->user_signals,
+				emit_user_signal, &data);
+
+	if (!l_queue_isempty(tree->user_signals))
 		all_done = false;
 
 	if (all_done) {
@@ -1756,6 +1797,68 @@ LIB_EXPORT bool l_dbus_property_changed(struct l_dbus *dbus, const char *path,
 	return _dbus_object_tree_property_changed(dbus, path, interface,
 							property);
 }
+
+LIB_EXPORT bool l_dbus_signal_emit(struct l_dbus *dbus,
+						const char *path,
+						const char *interface_name,
+						const char *signal_name,
+						const char *signature,
+						...)
+{
+	struct user_signal_record *rec;
+	struct object_node *object;
+	struct interface_instance *instance;
+	struct l_dbus_message_builder *builder;
+	struct _dbus_signal *signal;
+	struct _dbus_object_tree *tree = _dbus_get_tree(dbus);
+	va_list args;
+
+	object = l_hashmap_lookup(tree->objects, path);
+	if (!object)
+		return false;
+
+	instance = l_queue_find(object->instances, match_interface_instance,
+					interface_name);
+	if (!instance)
+		return false;
+
+	signal = _dbus_interface_find_signal(instance->interface,
+					signal_name);
+	if (!signal)
+		return false;
+
+	/*
+	 * TODO: check signature vs signal->metainfo
+	 * see _dbus_signal_introspection
+	 */
+
+	rec = l_new(struct user_signal_record, 1);
+	rec->path = l_strdup(path);
+	rec->object = object;
+	rec->message = l_dbus_message_new_signal(dbus, path,
+								interface_name, signal_name);
+
+	builder = l_dbus_message_builder_new(rec->message);
+	if (!builder) {
+		l_dbus_message_unref(rec->message);
+		l_free(rec->path);
+		l_free(rec);
+		return false;
+	}
+
+	va_start(args, signature);
+	l_dbus_message_builder_append_from_valist(builder, signature, args);
+	va_end(args);
+
+	l_dbus_message_builder_finalize(builder);
+	l_dbus_message_builder_destroy(builder);
+
+	l_queue_push_tail(tree->user_signals, rec);
+	schedule_emit_signals(dbus);
+
+	return true;
+}
+
 
 static struct l_dbus_message *properties_get(struct l_dbus *dbus,
 						struct l_dbus_message *message,
