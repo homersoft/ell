@@ -30,9 +30,11 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <time.h>
 #include <fnmatch.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/time.h>
 
 #include "queue.h"
 #include "log.h"
@@ -142,6 +144,17 @@ LIB_EXPORT void l_log_set_null(void)
 static void log_stderr(int priority, const char *file, const char *line,
 			const char *func, const char *format, va_list ap)
 {
+	char timestamp[20];
+	const char *delim = strrchr(file, '/');
+	struct timeval tv;
+	struct tm tm;
+
+	gettimeofday(&tv, NULL);
+	localtime_r(&tv.tv_sec, &tm);
+	strftime(timestamp, sizeof(timestamp), "%F %T", &tm);
+
+	fprintf(stderr, "%s.%03ld %12s:%-4s %-26s ", timestamp, tv.tv_usec / 1000,
+			delim ? delim + 1 : file, line, func);
 	vfprintf(stderr, format, ap);
 }
 
