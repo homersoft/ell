@@ -235,7 +235,10 @@ LIB_EXPORT bool l_uuid_parse(const char *src, size_t src_size,
 	uint8_t buf[16];
 	int n;
 
-	if (src_size != 36)
+	/*
+	 * textual representation: 32 hex digits + 4 group separators
+	 */
+	if (src_size != 16 * 2 + 4)
 		return false;
 
 	n = sscanf(src,
