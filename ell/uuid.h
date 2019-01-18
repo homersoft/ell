@@ -53,7 +53,10 @@ bool l_uuid_is_valid(const uint8_t uuid[16]);
 enum l_uuid_version l_uuid_get_version(const uint8_t uuid[16]);
 
 bool l_uuid_to_string(const uint8_t uuid[16], char *dest, size_t dest_size);
-bool l_uuid_parse(const char *src, size_t src_size, uint8_t uuid[16]);
+bool l_uuid_parse_string(const char *src, size_t src_size, uint8_t uuid[16]);
+
+bool l_uuid_to_hex(const uint8_t uuid[16], char *dest, size_t dest_size);
+bool l_uuid_parse_hex(const char *src, size_t src_size, uint8_t uuid[16]);
 
 #ifdef __cplusplus
 }

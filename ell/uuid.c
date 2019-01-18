@@ -229,7 +229,7 @@ LIB_EXPORT bool l_uuid_to_string(const uint8_t uuid[16],
 	return true;
 }
 
-LIB_EXPORT bool l_uuid_parse(const char *src, size_t src_size,
+LIB_EXPORT bool l_uuid_parse_string(const char *src, size_t src_size,
 							 uint8_t uuid[16])
 {
 	uint8_t buf[16];
@@ -252,6 +252,59 @@ LIB_EXPORT bool l_uuid_parse(const char *src, size_t src_size,
 			&buf[6], &buf[7],
 			&buf[8], &buf[9],
 			&buf[10], &buf[11], &buf[12], &buf[13], &buf[14], &buf[15]);
+
+	if (n != 16)
+		return false;
+
+	if (!l_uuid_is_valid(buf))
+		return false;
+
+	memcpy(uuid, buf, sizeof(buf));
+	return true;
+}
+
+LIB_EXPORT bool l_uuid_to_hex(const uint8_t uuid[16],
+						char *dest, size_t dest_size)
+{
+	int n;
+
+	n = snprintf(dest, dest_size,
+			"%02" PRIx8 "%02" PRIx8 "%02" PRIx8 "%02" PRIx8
+			"%02" PRIx8 "%02" PRIx8 "%02" PRIx8 "%02" PRIx8
+			"%02" PRIx8 "%02" PRIx8 "%02" PRIx8 "%02" PRIx8
+			"%02" PRIx8 "%02" PRIx8 "%02" PRIx8 "%02" PRIx8 "",
+			uuid[0], uuid[1], uuid[2], uuid[3],
+			uuid[4], uuid[5], uuid[6], uuid[7],
+			uuid[8], uuid[9], uuid[10], uuid[11],
+			uuid[12], uuid[13], uuid[14], uuid[15]);
+
+	if (n < 0 || (size_t) n >= dest_size)
+		return false;
+
+	return true;
+}
+
+LIB_EXPORT bool l_uuid_parse_hex(const char *src, size_t src_size,
+							 uint8_t uuid[16])
+{
+	uint8_t buf[16];
+	int n;
+
+	/*
+	 * hexadecimal representation: 32 hex digits
+	 */
+	if (src_size != 16 * 2)
+		return false;
+
+	n = sscanf(src,
+			"%02" SCNx8 "%02" SCNx8 "%02" SCNx8 "%02" SCNx8
+			"%02" SCNx8 "%02" SCNx8 "%02" SCNx8 "%02" SCNx8
+			"%02" SCNx8 "%02" SCNx8 "%02" SCNx8 "%02" SCNx8
+			"%02" SCNx8 "%02" SCNx8 "%02" SCNx8 "%02" SCNx8 "",
+			&buf[0], &buf[1], &buf[2], &buf[3],
+			&buf[4], &buf[5], &buf[6], &buf[7],
+			&buf[8], &buf[9], &buf[10], &buf[11],
+			&buf[12], &buf[13], &buf[14], &buf[15]);
 
 	if (n != 16)
 		return false;

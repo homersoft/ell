@@ -158,47 +158,47 @@ static void test_to_string(const void *data)
 	assert(!strcmp(buf, expected_uuid));
 }
 
-static void test_parse_too_short(const void *data)
+static void test_parse_string_too_short(const void *data)
 {
 	uint8_t uuid[16];
 	const char *string_uuid = "65fcc697-0776-5bf9-8573-72a51080c7d";
 	bool r;
 
-	r = l_uuid_parse(string_uuid, strlen(string_uuid), uuid);
+	r = l_uuid_parse_string(string_uuid, strlen(string_uuid), uuid);
 	assert(!r);
 }
 
-static void test_parse_too_long(const void *data)
+static void test_parse_string_too_long(const void *data)
 {
 	uint8_t uuid[16];
 	const char *string_uuid = "65fcc697-0776-5bf9-8573-72a51080c7detoolong";
 	bool r;
 
-	r = l_uuid_parse(string_uuid, strlen(string_uuid), uuid);
+	r = l_uuid_parse_string(string_uuid, strlen(string_uuid), uuid);
 	assert(!r);
 }
 
-static void test_parse_invalid_variant(const void *data)
+static void test_parse_string_invalid_variant(const void *data)
 {
 	uint8_t uuid[16];
 	const char *string_uuid = "65fcc697-0776-5bf9-c573-72a51080c7de";
 	bool r;
 
-	r = l_uuid_parse(string_uuid, strlen(string_uuid), uuid);
+	r = l_uuid_parse_string(string_uuid, strlen(string_uuid), uuid);
 	assert(!r);
 }
 
-static void test_parse_invalid_hex(const void *data)
+static void test_parse_string_invalid_hex(const void *data)
 {
 	uint8_t uuid[16];
 	const char *string_uuid = "65fcc697-this-isno-tava-lidhexstring";
 	bool r;
 
-	r = l_uuid_parse(string_uuid, strlen(string_uuid), uuid);
+	r = l_uuid_parse_string(string_uuid, strlen(string_uuid), uuid);
 	assert(!r);
 }
 
-static void test_parse(const void *data)
+static void test_parse_string(const void *data)
 {
 	uint8_t uuid[16];
 	bool r;
@@ -206,11 +206,41 @@ static void test_parse(const void *data)
 	uint8_t expected_uuid[16] = { 0x65, 0xfc, 0xc6, 0x97, 0x07, 0x76, 0x5b, 0xf9,
 		                          0x85, 0x73, 0x72, 0xa5, 0x10, 0x80, 0xc7, 0xde };
 
-	r = l_uuid_parse(string_uuid, strlen(string_uuid), uuid);
+	r = l_uuid_parse_string(string_uuid, strlen(string_uuid), uuid);
 	assert(r);
 
 	assert(!memcmp(uuid, expected_uuid, sizeof(uuid)));
+}
 
+static void test_to_hex(const void *data)
+{
+	uint8_t uuid[16];
+	bool r;
+	const char *dns = "01.org";
+	const char *expected_uuid = "65fcc69707765bf9857372a51080c7de";
+	char buf[64];
+
+	r = l_uuid_v5(L_UUID_NAMESPACE_DNS, dns, strlen(dns), uuid);
+	assert(r);
+
+	r = l_uuid_to_hex(uuid, buf, sizeof(buf));
+	assert(r);
+
+	assert(!strcmp(buf, expected_uuid));
+}
+
+static void test_parse_hex(const void *data)
+{
+	uint8_t uuid[16];
+	bool r;
+	const char *string_uuid = "65fcc69707765bf9857372a51080c7de";
+	uint8_t expected_uuid[16] = { 0x65, 0xfc, 0xc6, 0x97, 0x07, 0x76, 0x5b, 0xf9,
+		                          0x85, 0x73, 0x72, 0xa5, 0x10, 0x80, 0xc7, 0xde };
+
+	r = l_uuid_parse_hex(string_uuid, strlen(string_uuid), uuid);
+	assert(r);
+
+	assert(!memcmp(uuid, expected_uuid, sizeof(uuid)));
 }
 
 int main(int argc, char *argv[])
@@ -224,11 +254,13 @@ int main(int argc, char *argv[])
 
 	l_test_add("/uuid/v5", test_v5, NULL);
 	l_test_add("/uuid/to string", test_to_string, NULL);
-	l_test_add("/uuid/parse too short", test_parse_too_short, NULL);
-	l_test_add("/uuid/parse too long", test_parse_too_long, NULL);
-	l_test_add("/uuid/parse invalid variant", test_parse_invalid_variant, NULL);
-	l_test_add("/uuid/parse invalid hex", test_parse_invalid_hex, NULL);
-	l_test_add("/uuid/parse", test_parse, NULL);
+	l_test_add("/uuid/parse string too short", test_parse_string_too_short, NULL);
+	l_test_add("/uuid/parse string too long", test_parse_string_too_long, NULL);
+	l_test_add("/uuid/parse string invalid variant", test_parse_string_invalid_variant, NULL);
+	l_test_add("/uuid/parse string invalid hex", test_parse_string_invalid_hex, NULL);
+	l_test_add("/uuid/parse string", test_parse_string, NULL);
+	l_test_add("/uuid/to hex", test_to_hex, NULL);
+	l_test_add("/uuid/parse hex", test_parse_hex, NULL);
 
 	return l_test_run();
 
