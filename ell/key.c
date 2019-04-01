@@ -367,7 +367,7 @@ LIB_EXPORT bool l_key_extract(struct l_key *key, void *payload, size_t *len)
 	keylen = kernel_read_key(key->serial, payload, *len);
 
 	if (keylen < 0 || (size_t)keylen > *len) {
-		explicit_bzero(payload, *len);
+		memset(payload, 0, *len);
 		return false;
 	}
 
@@ -483,7 +483,7 @@ LIB_EXPORT struct l_key *l_key_generate_dh_private(const void *prime_buf,
 	buf[0] |= 1 << ((prime_bits - 2) % 8);
 
 	private = l_key_new(L_KEY_RAW, buf, private_bytes);
-	explicit_bzero(buf, private_bytes);
+	memset(buf, 0, private_bytes);
 	l_free(buf);
 	return private;
 }

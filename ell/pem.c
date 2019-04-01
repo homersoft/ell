@@ -455,7 +455,7 @@ static struct l_key *pem_load_private_key(uint8_t *content,
 		}
 
 		l_cipher_free(alg);
-		explicit_bzero(content, len);
+		memset(content, 0, len);
 		l_free(content);
 		content = decrypted;
 		len = data_len;
@@ -493,7 +493,7 @@ done:
 
 err:
 	if (content) {
-		explicit_bzero(content, len);
+		memset(content, 0, len);
 		l_free(content);
 	}
 
