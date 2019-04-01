@@ -99,7 +99,7 @@ LIB_EXPORT bool l_cert_pkcs5_pbkdf1(enum l_checksum_type type,
 	if (!iter_count)
 		memcpy(out_dk, t, dk_len);
 
-	explicit_bzero(t, sizeof(t));
+	memset(t, 0, sizeof(t));
 	return !iter_count;
 }
 
@@ -243,7 +243,7 @@ uint8_t *cert_pkcs12_pbkdf(const char *password,
 
 		memcpy(ptr, bmpstring, p_len + passwd_len - j);
 
-		explicit_bzero(bmpstring, passwd_len);
+		memset(bmpstring, 0, passwd_len);
 		l_free(bmpstring);
 	}
 
@@ -295,13 +295,13 @@ uint8_t *cert_pkcs12_pbkdf(const char *password,
 			}
 
 			ptr[k] += b[k] + carry;
-			explicit_bzero(&carry, sizeof(carry));
+			memset(&carry, 0, sizeof(carry));
 		}
 
-		explicit_bzero(b, sizeof(b));
+		memset(b, 0, sizeof(b));
 	}
 
-	explicit_bzero(di, sizeof(di));
+	memset(di, 0, sizeof(di));
 	l_checksum_free(h);
 	return key;
 }
@@ -613,7 +613,7 @@ static struct l_cipher *cipher_from_pkcs5_pbes2_params(
 		cipher = NULL;
 	}
 
-	explicit_bzero(derived_key, 16);
+	memset(derived_key, 0, 16);
 	return cipher;
 }
 
@@ -670,14 +670,14 @@ static struct l_cipher *cipher_from_pkcs12_alg_id(
 
 		memcpy(key2, key, 16);
 		memcpy(key2 + 16, key, 8);
-		explicit_bzero(key, key_len);
+		memset(key, 0, key_len);
 		l_free(key);
 		key = key2;
 		key_len = 24;
 	}
 
 	cipher = l_cipher_new(scheme->cipher_type, key, key_len);
-	explicit_bzero(key, key_len);
+	memset(key, 0, key_len);
 	l_free(key);
 
 	if (!cipher)
@@ -694,7 +694,7 @@ static struct l_cipher *cipher_from_pkcs12_alg_id(
 		}
 
 		if (iv)
-			explicit_bzero(iv, scheme->iv_length);
+			memset(iv, 0, scheme->iv_length);
 
 		l_free(iv);
 	}
@@ -790,7 +790,7 @@ struct l_cipher *cert_cipher_from_pkcs_alg_id(const uint8_t *id_asn1,
 		cipher = NULL;
 	}
 
-	explicit_bzero(derived_key, 16);
+	memset(derived_key, 0, 16);
 
 	if (out_is_block)
 		*out_is_block = true;
