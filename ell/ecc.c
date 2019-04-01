@@ -561,8 +561,8 @@ LIB_EXPORT void l_ecc_point_free(struct l_ecc_point *p)
 	if (unlikely(!p))
 		return;
 
-	explicit_bzero(p->x, p->curve->ndigits * 8);
-	explicit_bzero(p->y, p->curve->ndigits * 8);
+	memset(p->x, 0, p->curve->ndigits * 8);
+	memset(p->y, 0, p->curve->ndigits * 8);
 	l_free(p);
 }
 
@@ -642,7 +642,7 @@ LIB_EXPORT void l_ecc_scalar_free(struct l_ecc_scalar *c)
 	if (unlikely(!c))
 		return;
 
-	explicit_bzero(c->c, c->curve->ndigits * 8);
+	memset(c->c, 0, c->curve->ndigits * 8);
 	l_free(c);
 }
 

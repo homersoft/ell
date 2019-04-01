@@ -80,7 +80,7 @@ static void setting_destroy(void *data)
 	struct setting_data *pair = data;
 
 	l_free(pair->key);
-	explicit_bzero(pair->value, strlen(pair->value));
+	memset(pair->value, 0, strlen(pair->value));
 	l_free(pair->value);
 	l_free(pair);
 }
@@ -161,7 +161,7 @@ static char *unescape_value(const char *value)
 			*n = '\\';
 			break;
 		default:
-			explicit_bzero(ret, n - ret);
+			memset(ret, 0, n - ret);
 			l_free(ret);
 			return NULL;
 		}
