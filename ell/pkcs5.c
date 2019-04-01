@@ -96,7 +96,7 @@ LIB_EXPORT bool l_pkcs5_pbkdf1(enum l_checksum_type type, const char *password,
 	if (!iter_count)
 		memcpy(out_dk, t, dk_len);
 
-	explicit_bzero(t, sizeof(t));
+	memset(t, 0, sizeof(t));
 	return !iter_count;
 }
 
@@ -408,7 +408,7 @@ static struct l_cipher *pkcs5_cipher_from_pbes2_params(
 		cipher = NULL;
 	}
 
-	explicit_bzero(derived_key, 16);
+	memset(derived_key, 0, 16);
 	return cipher;
 }
 
@@ -482,6 +482,6 @@ struct l_cipher *pkcs5_cipher_from_alg_id(const uint8_t *id_asn1,
 		cipher = NULL;
 	}
 
-	explicit_bzero(derived_key, 16);
+	memset(derived_key, 0, 16);
 	return cipher;
 }
