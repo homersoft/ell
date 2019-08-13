@@ -37,7 +37,7 @@ extern "C" {
 
 #define l_container_of(ptr, type, member) ({				\
 		const __typeof__(((type *) 0)->member) *__mptr = (ptr);	\
-		(type *)((char *) __mptr - offsetof(type, member));	\
+		(type *)(void *)((char *) __mptr - offsetof(type, member));	\
 	})
 
 #define likely(x)   __builtin_expect(!!(x), 1)
