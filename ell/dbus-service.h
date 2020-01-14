@@ -46,6 +46,9 @@ enum l_dbus_signal_flag {
 
 enum l_dbus_property_flag {
 	L_DBUS_PROPERTY_FLAG_DEPRECATED = 1,
+	L_DBUS_PROPERTY_FLAG_SIGNAL_CONST = 2,
+	L_DBUS_PROPERTY_FLAG_SIGNAL_INVALIDATES = 4,
+	L_DBUS_PROPERTY_FLAG_SIGNAL_TRUE = 8,
 };
 
 typedef struct l_dbus_message *(*l_dbus_interface_method_cb_t) (struct l_dbus *,

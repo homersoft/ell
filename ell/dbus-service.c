@@ -234,14 +234,27 @@ void _dbus_property_introspection(struct _dbus_property *info,
 	else
 		l_string_append(buf, "access=\"read\"");
 
-	if (info->flags & L_DBUS_METHOD_FLAG_DEPRECATED) {
-		l_string_append(buf, ">\n");
+	if (info->flags & L_DBUS_PROPERTY_FLAG_DEPRECATED)
 		l_string_append(buf, "\t\t\t<annotation name=\""
 				"org.freedesktop.DBus.Deprecated\" "
 				"value=\"true\"/>\n");
-		l_string_append(buf, "\t\t</property>\n");
-	} else
-		l_string_append(buf, "/>\n");
+
+	if (info->flags & (L_DBUS_PROPERTY_FLAG_SIGNAL_CONST |
+				L_DBUS_PROPERTY_FLAG_SIGNAL_INVALIDATES |
+				L_DBUS_PROPERTY_FLAG_SIGNAL_TRUE)) {
+		l_string_append(buf, "\t\t\t<annotation name=\""
+				"org.freedesktop.DBus.Property.EmitsChangedSignal\" "
+				"value=\"");
+		if (info->flags & L_DBUS_PROPERTY_FLAG_SIGNAL_CONST)
+			l_string_append(buf, "const");
+		else if (info->flags & L_DBUS_PROPERTY_FLAG_SIGNAL_INVALIDATES)
+			l_string_append(buf, "invalidates");
+		else if (info->flags & L_DBUS_PROPERTY_FLAG_SIGNAL_TRUE)
+			l_string_append(buf, "true");
+		l_string_append(buf, "\"/>\n");
+	}
+
+	l_string_append(buf, "\t\t</property>\n");
 }
 
 void _dbus_interface_introspection(struct l_dbus_interface *interface,
