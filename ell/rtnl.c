@@ -25,9 +25,9 @@
 #endif
 
 #define _GNU_SOURCE
+#include <sys/socket.h>
 #include <linux/if.h>
 #include <linux/icmpv6.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 
 #include "util.h"
