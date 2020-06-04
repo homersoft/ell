@@ -84,6 +84,19 @@ struct l_dbus_message_builder {
 	struct builder_driver *driver;
 };
 
+bool l_dbus_message_set_fds(struct l_dbus_message *message, uint32_t num_fds, int *fds)
+{
+	message->num_fds = num_fds;
+
+	for (size_t i = 0; i < num_fds; i++)
+	{
+		message->fds[i] =
+				fcntl(fds[i], F_DUPFD_CLOEXEC, 3);
+	}
+
+	return true;
+}
+
 static inline bool _dbus_message_is_gvariant(struct l_dbus_message *msg)
 {
 	struct dbus_header *hdr = msg->header;

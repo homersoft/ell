@@ -134,6 +134,8 @@ const char *l_dbus_message_get_signature(struct l_dbus_message *message);
 bool l_dbus_message_set_no_reply(struct l_dbus_message *message, bool on);
 bool l_dbus_message_get_no_reply(struct l_dbus_message *message);
 
+
+
 bool l_dbus_message_set_no_autostart(struct l_dbus_message *message, bool on);
 bool l_dbus_message_get_no_autostart(struct l_dbus_message *message);
 
@@ -163,6 +165,7 @@ uint32_t l_dbus_method_call(struct l_dbus *dbus,
 bool l_dbus_message_is_error(struct l_dbus_message *message);
 bool l_dbus_message_get_error(struct l_dbus_message *message,
 					const char **name, const char **text);
+bool l_dbus_message_set_fds(struct l_dbus_message *message, uint32_t num_fds, int fds[16]);
 bool l_dbus_message_get_arguments(struct l_dbus_message *message,
 						const char *signature, ...);
 bool l_dbus_message_get_arguments_valist(struct l_dbus_message *message,
