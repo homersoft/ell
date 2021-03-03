@@ -102,7 +102,6 @@ struct l_genl {
 struct l_genl_msg {
 	int ref_count;
 	int error;
-	char *error_msg;
 	uint8_t cmd;
 	uint8_t version;
 	void *data;
@@ -730,17 +729,6 @@ static bool match_request_hid(const void *a, const void *b)
 	return request->handle_id == id;
 }
 
-#define NLA_OK(nla,len)         ((len) >= (int) sizeof(struct nlattr) && \
-				(nla)->nla_len >= sizeof(struct nlattr) && \
-				(nla)->nla_len <= (len))
-#define NLA_NEXT(nla,attrlen)	((attrlen) -= NLMSG_ALIGN((nla)->nla_len), \
-				(struct nlattr*)(((char*)(nla)) + \
-				NLMSG_ALIGN((nla)->nla_len)))
-
-#define NLA_LENGTH(len)		(NLMSG_ALIGN(sizeof(struct nlattr)) + (len))
-#define NLA_DATA(nla)		((void*)(((char*)(nla)) + NLA_LENGTH(0)))
-#define NLA_PAYLOAD(nla)	((int)((nla)->nla_len) - NLA_LENGTH(0))
-
 static struct l_genl_msg *msg_alloc(uint8_t cmd, uint8_t version, uint32_t size)
 {
 	struct l_genl_msg *msg;
@@ -787,46 +775,9 @@ static struct l_genl_msg *msg_create(const struct nlmsghdr *nlmsg)
 
 	if (nlmsg->nlmsg_type == NLMSG_ERROR) {
 		struct nlmsgerr *err = NLMSG_DATA(nlmsg);
-		unsigned int offset = 0;
-		struct nlattr *nla;
-		int len;
 
 		msg->error = err->error;
-
-		if (!(nlmsg->nlmsg_flags & NLM_F_ACK_TLVS))
-			goto done;
-
-		/*
-		 * If the message is capped, then err->msg.nlmsg_len contains
-		 * the length of the original message and thus can't be used
-		 * to calculate the offset
-		 */
-		if (!(nlmsg->nlmsg_flags & NLM_F_CAPPED))
-			offset = err->msg.nlmsg_len - sizeof(struct nlmsghdr);
-
-		/*
-		 * Attributes start past struct nlmsgerr.  The offset is 0
-		 * for NLM_F_CAPPED messages.  Otherwise the original message
-		 * is included, and thus the offset takes err->msg.nlmsg_len
-		 * into account
-		 */
-		nla = (void *)(err + 1) + offset;
-
-		/* Calculate bytes taken up by header + nlmsgerr contents */
-		offset += sizeof(struct nlmsghdr) + sizeof(struct nlmsgerr);
-		if (nlmsg->nlmsg_len <= offset)
-			goto done;
-
-		len = nlmsg->nlmsg_len - offset;
-
-		for (; NLA_OK(nla, len); nla = NLA_NEXT(nla, len)) {
-			if ((nla->nla_type & NLA_TYPE_MASK) !=
-					NLMSGERR_ATTR_MSG)
-				continue;
-
-			msg->error_msg = l_strdup(NLA_DATA(nla));
-			goto done;
-		}
+		goto done;
 	}
 
 	msg->data = l_memdup(nlmsg, nlmsg->nlmsg_len);
@@ -1121,9 +1072,7 @@ LIB_EXPORT struct l_genl *l_genl_new(void)
 	struct l_genl *genl;
 	struct sockaddr_nl addr;
 	socklen_t addrlen = sizeof(addr);
-	int fd;
-	int pktinfo = 1;
-	int ext_ack = 1;
+	int fd, pktinfo = 1;
 
 	fd = socket(PF_NETLINK, SOCK_DGRAM | SOCK_CLOEXEC | SOCK_NONBLOCK,
 							NETLINK_GENERIC);
@@ -1143,10 +1092,6 @@ LIB_EXPORT struct l_genl *l_genl_new(void)
 	if (setsockopt(fd, SOL_NETLINK, NETLINK_PKTINFO,
 					&pktinfo, sizeof(pktinfo)) < 0)
 		goto err;
-
-	/* Try setting EXT_ACK, but ignore the error if it isn't set */
-	setsockopt(fd, SOL_NETLINK, NETLINK_EXT_ACK,
-					&ext_ack, sizeof(ext_ack));
 
 	genl = l_new(struct l_genl, 1);
 	genl->pid = addr.nl_pid;
@@ -1611,7 +1556,6 @@ LIB_EXPORT void l_genl_msg_unref(struct l_genl_msg *msg)
 	if (__atomic_sub_fetch(&msg->ref_count, 1, __ATOMIC_SEQ_CST))
 		return;
 
-	l_free(msg->error_msg);
 	l_free(msg->data);
 	l_free(msg);
 }
@@ -1638,14 +1582,6 @@ LIB_EXPORT int l_genl_msg_get_error(struct l_genl_msg *msg)
 		return -ENOMSG;
 
 	return msg->error;
-}
-
-LIB_EXPORT const char *l_genl_msg_get_extended_error(struct l_genl_msg *msg)
-{
-	if (unlikely(!msg))
-		return NULL;
-
-	return msg->error_msg;
 }
 
 LIB_EXPORT bool l_genl_msg_append_attr(struct l_genl_msg *msg, uint16_t type,
@@ -1742,6 +1678,17 @@ LIB_EXPORT bool l_genl_msg_leave_nested(struct l_genl_msg *msg)
 
 	return true;
 }
+
+#define NLA_OK(nla,len)         ((len) >= (int) sizeof(struct nlattr) && \
+				(nla)->nla_len >= sizeof(struct nlattr) && \
+				(nla)->nla_len <= (len))
+#define NLA_NEXT(nla,attrlen)	((attrlen) -= NLMSG_ALIGN((nla)->nla_len), \
+				(struct nlattr*)(((char*)(nla)) + \
+				NLMSG_ALIGN((nla)->nla_len)))
+
+#define NLA_LENGTH(len)		(NLMSG_ALIGN(sizeof(struct nlattr)) + (len))
+#define NLA_DATA(nla)		((void*)(((char*)(nla)) + NLA_LENGTH(0)))
+#define NLA_PAYLOAD(nla)	((int)((nla)->nla_len) - NLA_LENGTH(0))
 
 LIB_EXPORT bool l_genl_attr_init(struct l_genl_attr *attr,
 						struct l_genl_msg *msg)
@@ -2118,6 +2065,7 @@ LIB_EXPORT void l_genl_family_free(struct l_genl_family *family)
 
 		mcast = l_queue_find(info->mcast_list, match_mcast_id,
 						L_UINT_TO_PTR(notify->group));
+
 		if (mcast)
 			drop_membership(genl, mcast);
 
