@@ -558,28 +558,28 @@ static size_t rta_add_data(void *rta_buf, unsigned short type, const void *data,
 	return RTA_SPACE(data_len);
 }
 
-static size_t rta_add_address(void *rta_buf, unsigned short type,
-				uint8_t family,
-				const struct in6_addr *v6,
-				const struct in_addr *v4)
-{
-	struct rtattr *rta = rta_buf;
+// static size_t rta_add_address(void *rta_buf, unsigned short type,
+// 				uint8_t family,
+// 				const struct in6_addr *v6,
+// 				const struct in_addr *v4)
+// {
+// 	struct rtattr *rta = rta_buf;
 
-	rta->rta_type = type;
+// 	rta->rta_type = type;
 
-	switch (family) {
-	case AF_INET6:
-		rta->rta_len = RTA_LENGTH(sizeof(struct in6_addr));
-		memcpy(RTA_DATA(rta), v6, sizeof(struct in6_addr));
-		return RTA_SPACE(sizeof(struct in6_addr));
-	case AF_INET:
-		rta->rta_len = RTA_LENGTH(sizeof(struct in_addr));
-		memcpy(RTA_DATA(rta), v4, sizeof(struct in_addr));
-		return RTA_SPACE(sizeof(struct in_addr));
-	}
+// 	switch (family) {
+// 	case AF_INET6:
+// 		rta->rta_len = RTA_LENGTH(sizeof(struct in6_addr));
+// 		memcpy(RTA_DATA(rta), v6, sizeof(struct in6_addr));
+// 		return RTA_SPACE(sizeof(struct in6_addr));
+// 	case AF_INET:
+// 		rta->rta_len = RTA_LENGTH(sizeof(struct in_addr));
+// 		memcpy(RTA_DATA(rta), v4, sizeof(struct in_addr));
+// 		return RTA_SPACE(sizeof(struct in_addr));
+// 	}
 
-	return 0;
-}
+// 	return 0;
+// }
 
 static void l_rtnl_route_extract(const struct rtmsg *rtmsg, uint32_t len,
 				int family, uint32_t *table, uint32_t *ifindex,
@@ -1145,79 +1145,79 @@ LIB_EXPORT uint32_t l_rtnl_ifaddr_delete(struct l_netlink *rtnl, int ifindex,
 						cb, user_data, destroy);
 }
 
-static uint32_t _rtnl_route_change(struct l_netlink *rtnl,
-					uint16_t nlmsg_type, int ifindex,
-					const struct l_rtnl_route *rt,
-					l_netlink_command_func_t cb,
-					void *user_data,
-					l_netlink_destroy_func_t destroy)
-{
-	L_AUTO_FREE_VAR(struct rtmsg *, rtmmsg) = NULL;
-	size_t bufsize;
-	void *rta_buf;
-	uint16_t flags;
+// static uint32_t _rtnl_route_change(struct l_netlink *rtnl,
+// 					uint16_t nlmsg_type, int ifindex,
+// 					const struct l_rtnl_route *rt,
+// 					l_netlink_command_func_t cb,
+// 					void *user_data,
+// 					l_netlink_destroy_func_t destroy)
+// {
+// 	L_AUTO_FREE_VAR(struct rtmsg *, rtmmsg) = NULL;
+// 	size_t bufsize;
+// 	void *rta_buf;
+// 	uint16_t flags;
 
-	bufsize = NLMSG_ALIGN(sizeof(struct rtmsg)) +
-			RTA_SPACE(sizeof(uint32_t)) +        /* RTA_OIF */
-			RTA_SPACE(sizeof(uint32_t)) +        /* RTA_PRIORITY */
-			RTA_SPACE(sizeof(struct in6_addr)) + /* RTA_GATEWAY */
-			RTA_SPACE(sizeof(struct in6_addr)) + /* RTA_DST */
-			RTA_SPACE(sizeof(struct in6_addr)) + /* RTA_PREFSRC */
-			256 +                                /* RTA_METRICS */
-			RTA_SPACE(sizeof(uint8_t)) +         /* RTA_PREF */
-			RTA_SPACE(sizeof(uint32_t));         /* RTA_EXPIRES */
+// 	bufsize = NLMSG_ALIGN(sizeof(struct rtmsg)) +
+// 			RTA_SPACE(sizeof(uint32_t)) +        /* RTA_OIF */
+// 			RTA_SPACE(sizeof(uint32_t)) +        /* RTA_PRIORITY */
+// 			RTA_SPACE(sizeof(struct in6_addr)) + /* RTA_GATEWAY */
+// 			RTA_SPACE(sizeof(struct in6_addr)) + /* RTA_DST */
+// 			RTA_SPACE(sizeof(struct in6_addr)) + /* RTA_PREFSRC */
+// 			256 +                                /* RTA_METRICS */
+// 			RTA_SPACE(sizeof(uint8_t)) +         /* RTA_PREF */
+// 			RTA_SPACE(sizeof(uint32_t));         /* RTA_EXPIRES */
 
-	rtmmsg = l_malloc(bufsize);
-	memset(rtmmsg, 0, bufsize);
+// 	rtmmsg = l_malloc(bufsize);
+// 	memset(rtmmsg, 0, bufsize);
 
-	rtmmsg->rtm_family = rt->family;
-	rtmmsg->rtm_table = RT_TABLE_MAIN;
-	rtmmsg->rtm_protocol = rt->protocol;
-	rtmmsg->rtm_type = RTN_UNICAST;
-	rtmmsg->rtm_scope = rt->scope;
+// 	rtmmsg->rtm_family = rt->family;
+// 	rtmmsg->rtm_table = RT_TABLE_MAIN;
+// 	rtmmsg->rtm_protocol = rt->protocol;
+// 	rtmmsg->rtm_type = RTN_UNICAST;
+// 	rtmmsg->rtm_scope = rt->scope;
 
-	flags = NLM_F_CREATE | NLM_F_REPLACE;
+// 	flags = NLM_F_CREATE | NLM_F_REPLACE;
 
-	rta_buf = (void *) rtmmsg + NLMSG_ALIGN(sizeof(struct rtmsg));
-	rta_buf += rta_add_u32(rta_buf, RTA_OIF, ifindex);
+// 	rta_buf = (void *) rtmmsg + NLMSG_ALIGN(sizeof(struct rtmsg));
+// 	rta_buf += rta_add_u32(rta_buf, RTA_OIF, ifindex);
 
-	if (rt->priority)
-		rta_buf += rta_add_u32(rta_buf, RTA_PRIORITY,
-						rt->priority + ifindex);
+// 	if (rt->priority)
+// 		rta_buf += rta_add_u32(rta_buf, RTA_PRIORITY,
+// 						rt->priority + ifindex);
 
-	if (!address_is_null(rt->family, &rt->gw.in_addr, &rt->gw.in6_addr))
-		rta_buf += rta_add_address(rta_buf, RTA_GATEWAY, rt->family,
-					&rt->gw.in6_addr, &rt->gw.in_addr);
+// 	if (!address_is_null(rt->family, &rt->gw.in_addr, &rt->gw.in6_addr))
+// 		rta_buf += rta_add_address(rta_buf, RTA_GATEWAY, rt->family,
+// 					&rt->gw.in6_addr, &rt->gw.in_addr);
 
-	if (rt->dst_prefix_len) {
-		rtmmsg->rtm_dst_len = rt->dst_prefix_len;
-		rta_buf += rta_add_address(rta_buf, RTA_DST, rt->family,
-					&rt->dst.in6_addr, &rt->dst.in_addr);
-	}
+// 	if (rt->dst_prefix_len) {
+// 		rtmmsg->rtm_dst_len = rt->dst_prefix_len;
+// 		rta_buf += rta_add_address(rta_buf, RTA_DST, rt->family,
+// 					&rt->dst.in6_addr, &rt->dst.in_addr);
+// 	}
 
-	if (!address_is_null(rt->family, &rt->prefsrc.in_addr,
-						&rt->prefsrc.in6_addr))
-		rta_buf += rta_add_address(rta_buf, RTA_PREFSRC, rt->family,
-						&rt->prefsrc.in6_addr,
-						&rt->prefsrc.in_addr);
+// 	if (!address_is_null(rt->family, &rt->prefsrc.in_addr,
+// 						&rt->prefsrc.in6_addr))
+// 		rta_buf += rta_add_address(rta_buf, RTA_PREFSRC, rt->family,
+// 						&rt->prefsrc.in6_addr,
+// 						&rt->prefsrc.in_addr);
 
-	if (rt->mtu) {
-		uint8_t buf[256];
-		size_t written = rta_add_u32(buf, RTAX_MTU, rt->mtu);
+// 	if (rt->mtu) {
+// 		uint8_t buf[256];
+// 		size_t written = rta_add_u32(buf, RTAX_MTU, rt->mtu);
 
-		rta_buf += rta_add_data(rta_buf, RTA_METRICS, buf, written);
-	}
+// 		rta_buf += rta_add_data(rta_buf, RTA_METRICS, buf, written);
+// 	}
 
-	if (rt->preference)
-		rta_buf += rta_add_u8(rta_buf, RTA_PREF, rt->preference);
+// 	if (rt->preference)
+// 		rta_buf += rta_add_u8(rta_buf, RTA_PREF, rt->preference);
 
-	if (rt->lifetime != 0xffffffff)
-		rta_buf += rta_add_u32(rta_buf, RTA_EXPIRES, rt->lifetime);
+// 	if (rt->lifetime != 0xffffffff)
+// 		rta_buf += rta_add_u32(rta_buf, RTA_EXPIRES, rt->lifetime);
 
-	return l_netlink_send(rtnl, nlmsg_type, flags, rtmmsg,
-				rta_buf - (void *) rtmmsg, cb, user_data,
-								destroy);
-}
+// 	return l_netlink_send(rtnl, nlmsg_type, flags, rtmmsg,
+// 				rta_buf - (void *) rtmmsg, cb, user_data,
+// 								destroy);
+// }
 
 LIB_EXPORT uint32_t l_rtnl_route_add(struct l_netlink *rtnl, int ifindex,
 					const struct l_rtnl_route *rt,
@@ -1225,8 +1225,9 @@ LIB_EXPORT uint32_t l_rtnl_route_add(struct l_netlink *rtnl, int ifindex,
 					void *user_data,
 					l_netlink_destroy_func_t destroy)
 {
-	return _rtnl_route_change(rtnl, RTM_NEWROUTE, ifindex, rt,
-						cb, user_data, destroy);
+	return 0;
+	/* return _rtnl_route_change(rtnl, RTM_NEWROUTE, ifindex, rt,
+						cb, user_data, destroy);*/
 }
 
 LIB_EXPORT uint32_t l_rtnl_route_delete(struct l_netlink *rtnl, int ifindex,
@@ -1235,6 +1236,7 @@ LIB_EXPORT uint32_t l_rtnl_route_delete(struct l_netlink *rtnl, int ifindex,
 					void *user_data,
 					l_netlink_destroy_func_t destroy)
 {
-	return _rtnl_route_change(rtnl, RTM_DELROUTE, ifindex, rt,
-						cb, user_data, destroy);
+	return 0;
+	/* return _rtnl_route_change(rtnl, RTM_DELROUTE, ifindex, rt,
+						cb, user_data, destroy);*/
 }
