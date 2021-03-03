@@ -84,8 +84,6 @@ ell_libell_la_SOURCES = $(linux_headers) \
 			ell/checksum.c \
 			ell/netlink-private.h \
 			ell/netlink.c \
-			ell/genl.c \
-			ell/rtnl.c \
 			ell/dbus-private.h \
 			ell/dbus.c \
 			ell/dbus-message.c \
@@ -117,16 +115,6 @@ ell_libell_la_SOURCES = $(linux_headers) \
 			ell/dir.c \
 			ell/net-private.h \
 			ell/net.c \
-			ell/dhcp-private.h \
-			ell/dhcp.c \
-			ell/dhcp-transport.c \
-			ell/dhcp-lease.c \
-			ell/dhcp6-private.h \
-			ell/dhcp6.c \
-			ell/dhcp6-transport.c \
-			ell/dhcp6-lease.c \
-			ell/dhcp-util.c \
-			ell/dhcp-server.c \
 			ell/cert-private.h \
 			ell/cert.c \
 			ell/cert-crypto.c \
@@ -139,8 +127,6 @@ ell_libell_la_SOURCES = $(linux_headers) \
 			ell/time-private.h \
 			ell/gpio.c \
 			ell/path.c \
-			ell/icmp6.c \
-			ell/icmp6-private.h \
 			ell/acd.c
 
 ell_libell_la_LDFLAGS = -Wl,--no-undefined \
@@ -174,8 +160,6 @@ unit_tests = unit/test-unit \
 			unit/test-checksum \
 			unit/test-settings \
 			unit/test-netlink \
-			unit/test-genl-msg \
-			unit/test-rtnl \
 			unit/test-siphash \
 			unit/test-cipher \
 			unit/test-random \
@@ -184,8 +168,6 @@ unit_tests = unit/test-unit \
 			unit/test-base64 \
 			unit/test-uuid \
 			unit/test-pbkdf2 \
-			unit/test-dhcp \
-			unit/test-dhcp6 \
 			unit/test-dir-watch \
 			unit/test-ecc \
 			unit/test-ecdh \
@@ -269,10 +251,6 @@ unit_test_settings_LDADD = ell/libell-private.la
 
 unit_test_netlink_LDADD = ell/libell-private.la
 
-unit_test_genl_msg_LDADD = ell/libell-private.la
-
-unit_test_rtnl_LDADD = ell/libell-private.la
-
 unit_test_dbus_LDADD = ell/libell-private.la
 
 unit_test_dbus_message_LDADD = ell/libell-private.la
@@ -318,10 +296,6 @@ unit_test_key_DEPENDENCIES = $(cert_files) ell/libell-private.la
 
 unit_test_uuid_LDADD = ell/libell-private.la
 
-unit_test_dhcp_LDADD = ell/libell-private.la
-
-unit_test_dhcp6_LDADD = ell/libell-private.la
-
 unit_test_dir_watch_LDADD = ell/libell-private.la
 
 unit_test_ecc_LDADD = ell/libell-private.la
@@ -339,8 +313,7 @@ unit_test_data_files = unit/settings.test unit/dbus.conf
 
 examples = examples/dbus-service examples/https-client-test \
 		examples/https-server-test examples/dbus-client \
-		examples/dhcp-client examples/dhcp6-client \
-		examples/dhcp-server examples/acd-client
+		examples/acd-client
 
 if GLIB
 examples += examples/glib-eventloop
@@ -356,24 +329,11 @@ examples_https_server_test_LDADD = ell/libell-private.la
 examples_dbus_client_LDADD = ell/libell-private.la
 examples_glib_eventloop_CFLAGS = @GLIB_CFLAGS@
 examples_glib_eventloop_LDADD = ell/libell-private.la @GLIB_LIBS@
-examples_dhcp_client_LDADD = ell/libell-private.la
-examples_dhcp6_client_LDADD = ell/libell-private.la
-examples_dhcp_server_LDADD = ell/libell-private.la
 examples_acd_client_LDADD = ell/libell-private.la
 
-noinst_PROGRAMS += tools/certchain-verify tools/genl-discover \
-		   tools/genl-watch tools/genl-request tools/gpio
+noinst_PROGRAMS += tools/certchain-verify tools/gpio
 tools_certchain_verify_SOURCES = tools/certchain-verify.c
 tools_certchain_verify_LDADD = ell/libell-private.la
-
-tools_genl_discover_SOURCES = tools/genl-discover.c
-tools_genl_discover_LDADD = ell/libell-private.la
-
-tools_genl_watch_SOURCES = tools/genl-watch.c
-tools_genl_watch_LDADD = ell/libell-private.la
-
-tools_genl_request_SOURCES = tools/genl-request.c
-tools_genl_request_LDADD = ell/libell-private.la
 
 tools_gpio_SOURCES = tools/gpio.c
 tools_gpio_LDADD = ell/libell-private.la
