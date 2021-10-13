@@ -238,6 +238,8 @@ static const char *aead_cipher_type_to_name(enum l_aead_cipher_type type)
 		return "ccm(aes)";
 	case L_AEAD_CIPHER_AES_GCM:
 		return "gcm(aes)";
+	case L_AEAD_CIPHER_CHACHA20_POLY1305:
+		return "rfc7539(chacha20,poly1305)";
 	}
 
 	return NULL;
@@ -707,7 +709,7 @@ static void init_supported()
 
 	strcpy((char *) salg.salg_type, "aead");
 
-	for (a = L_AEAD_CIPHER_AES_CCM; a <= L_AEAD_CIPHER_AES_GCM; a++) {
+	for (a = L_AEAD_CIPHER_AES_CCM; a <= L_AEAD_CIPHER_CHACHA20_POLY1305; a++) {
 		strcpy((char *) salg.salg_name, aead_cipher_type_to_name(a));
 
 		if (bind(sk, (struct sockaddr *) &salg, sizeof(salg)) < 0)
@@ -731,7 +733,8 @@ LIB_EXPORT bool l_cipher_is_supported(enum l_cipher_type type)
 
 LIB_EXPORT bool l_aead_cipher_is_supported(enum l_aead_cipher_type type)
 {
-	if (type != L_AEAD_CIPHER_AES_CCM && type != L_AEAD_CIPHER_AES_GCM)
+	if (type != L_AEAD_CIPHER_AES_CCM && type != L_AEAD_CIPHER_AES_GCM &&
+				type != L_AEAD_CIPHER_CHACHA20_POLY1305)
 		return false;
 
 	init_supported();

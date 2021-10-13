@@ -65,6 +65,7 @@ struct l_aead_cipher;
 enum l_aead_cipher_type {
 	L_AEAD_CIPHER_AES_CCM = 0,
 	L_AEAD_CIPHER_AES_GCM,
+	L_AEAD_CIPHER_CHACHA20_POLY1305,
 };
 
 struct l_aead_cipher *l_aead_cipher_new(enum l_aead_cipher_type type,
