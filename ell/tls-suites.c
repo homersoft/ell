@@ -1128,6 +1128,11 @@ static struct tls_bulk_encryption_algorithm tls_aes128 = {
 	.iv_length = 12,
 	.fixed_iv_length = 4,
 	.auth_tag_length = 16,
+}, tls_chacha20_poly1305 = {
+	.cipher_type = TLS_CIPHER_AEAD,
+	.l_aead_id = L_AEAD_CIPHER_CHACHA20_POLY1305,
+	.key_length = 32,
+	.auth_tag_length = 16,
 };
 
 static struct tls_mac_algorithm tls_sha = {
@@ -1310,6 +1315,13 @@ static struct tls_cipher_suite tls_rsa_with_3des_ede_cbc_sha = {
 	.prf_hmac = L_CHECKSUM_SHA384,
 	.signature = &tls_rsa_signature,
 	.key_xchg = &tls_ecdhe,
+}, tls_ecdhe_psk_with_chacha20_poly1305_sha256 = {
+	.id = { 0xcc, 0xac },
+	.name = "TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256",
+	.verify_data_length = 16,
+	.encryption = &tls_chacha20_poly1305,
+	.signature = NULL,
+	.key_xchg = &tls_ecdhe,
 };
 
 struct tls_cipher_suite *tls_cipher_suite_pref[] = {
@@ -1334,5 +1346,6 @@ struct tls_cipher_suite *tls_cipher_suite_pref[] = {
 	&tls_ecdhe_rsa_with_3des_ede_cbc_sha,
 	&tls_dhe_rsa_with_3des_ede_cbc_sha,
 	&tls_rsa_with_3des_ede_cbc_sha,
+	&tls_ecdhe_psk_with_chacha20_poly1305_sha256,
 	NULL,
 };
