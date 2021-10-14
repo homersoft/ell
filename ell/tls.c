@@ -299,6 +299,8 @@ static bool tls_change_cipher_spec(struct l_tls *tls, bool txrx,
 			key_offset += enc->key_length;
 
 		if (enc->cipher_type == TLS_CIPHER_AEAD) {
+			TLS_DEBUG("AEAD key offset: %i, key len: %li, auth tag %li", key_offset, enc->key_length, enc->auth_tag_length);
+			TLS_DEBUG("AEAD key: %s", l_util_hexstring(tls->pending.key_block + key_offset, enc->key_length));
 			cipher = l_aead_cipher_new(enc->l_aead_id,
 						tls->pending.key_block +
 						key_offset, enc->key_length,
@@ -364,6 +366,7 @@ static bool tls_change_cipher_spec(struct l_tls *tls, bool txrx,
 		tls->fixed_iv_length[txrx] = enc->fixed_iv_length;
 		memcpy(tls->fixed_iv[txrx], tls->pending.key_block + key_offset,
 			enc->fixed_iv_length);
+		TLS_DEBUG("Fixed IV: %s", l_util_hexstring(tls->fixed_iv[txrx], enc->fixed_iv_length));
 
 		/* Wipe out the now unneeded part of the key block */
 		memset(tls->pending.key_block + key_offset, 0,
@@ -1264,9 +1267,11 @@ void tls_generate_master_secret(struct l_tls *tls,
 	memcpy(seed +  0, tls->pending.client_random, 32);
 	memcpy(seed + 32, tls->pending.server_random, 32);
 
-	tls_prf_get_bytes(tls, pre_master_secret, pre_master_secret_len,
+	if (!tls_prf_get_bytes(tls, pre_master_secret, pre_master_secret_len,
 				"master secret", seed, 64,
-				tls->pending.master_secret, 48);
+				tls->pending.master_secret, 48)) {
+		TLS_DEBUG("tls_prf_get_bytes failed");
+	}
 
 	/* Directly generate the key block while we're at it */
 	key_block_size = 0;

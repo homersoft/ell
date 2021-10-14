@@ -256,7 +256,8 @@ LIB_EXPORT struct l_aead_cipher *l_aead_cipher_new(enum l_aead_cipher_type type,
 	if (unlikely(!key))
 		return NULL;
 
-	if (type != L_AEAD_CIPHER_AES_CCM && type != L_AEAD_CIPHER_AES_GCM)
+	if (type != L_AEAD_CIPHER_AES_CCM && type != L_AEAD_CIPHER_AES_GCM &&
+				type != L_AEAD_CIPHER_CHACHA20_POLY1305)
 		return NULL;
 
 	cipher = l_new(struct l_aead_cipher, 1);

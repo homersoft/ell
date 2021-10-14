@@ -119,6 +119,7 @@ struct tls_cipher_suite {
 	struct tls_key_exchange_algorithm *key_xchg;
 	struct tls_mac_algorithm *mac;
 	enum l_checksum_type prf_hmac;
+	bool psk;
 };
 
 extern struct tls_cipher_suite *tls_cipher_suite_pref[];

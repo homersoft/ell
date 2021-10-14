@@ -475,8 +475,23 @@ static void tls_handle_ecdhe_server_key_xchg(struct l_tls *tls,
 {
 	struct tls_ecdhe_params *params;
 	uint16_t namedcurve;
+	uint16_t psk_hint;
 	const uint8_t *server_ecdh_params_ptr = buf;
 	size_t point_bytes;
+
+	if (len < 3)
+		goto decode_error;
+
+	if (tls->pending.cipher_suite->psk) {
+		psk_hint = l_get_be16(buf);
+		buf += 2;
+		len -= 2;
+
+		TLS_DEBUG("PSK identity hint: %*s", psk_hint, buf);
+
+		buf += psk_hint;
+		len -= psk_hint;
+	}
 
 	/* RFC 8422, Section 5.4 */
 
@@ -572,9 +587,19 @@ static bool tls_send_ecdhe_client_key_xchg(struct l_tls *tls)
 	uint8_t *ptr = buf + TLS_HANDSHAKE_HEADER_SIZE;
 	uint8_t pre_master_secret[128];
 	ssize_t pre_master_secret_len;
+	uint8_t pre_shared_key[2] = { 0xbe, 0xef };
+	ssize_t pre_shared_key_len = 2;
+
 	struct tls_ecdhe_params *params = tls->pending.key_xchg_params;
 	struct l_ecc_point *our_public;
 	struct l_ecc_scalar *secret;
+
+	if(tls->pending.cipher_suite->psk) {
+		l_put_be16(4, ptr);
+		ptr += 2;
+		memcpy(ptr, "dead", 4);
+		ptr += 4;
+	}
 
 	/* RFC 8422, Section 5.7 */
 
@@ -617,6 +642,28 @@ static bool tls_send_ecdhe_client_key_xchg(struct l_tls *tls)
 				"l_ecc_scalar_get_data(secret) failed");
 		return false;
 	}
+
+	/* RFC 5489, Section 2
+	 *
+	 * The premaster secret is formed as follows. First, perform the ECDH
+	 * computation as described in Section 5.10 of [RFC4492]. Let Z be the
+	 * octet string produced by this computation. Next, concatenate a
+	 * uint16 containing the length of Z (in octets), Z itself, a uint16
+	 * containing the length of the PSK (in octets), and the PSK itself.
+	 */
+	if (tls->pending.cipher_suite->psk) {
+		memmove(pre_master_secret + 2, pre_master_secret, pre_master_secret_len);
+		l_put_be16(pre_master_secret_len, pre_master_secret);
+		pre_master_secret_len += 2;
+
+		l_put_be16(pre_shared_key_len, pre_master_secret + pre_shared_key_len);
+		pre_master_secret_len += 2;
+
+		memcpy(pre_master_secret + pre_master_secret_len, pre_shared_key, pre_shared_key_len);
+		pre_master_secret_len += pre_shared_key_len;
+	}
+
+	TLS_DEBUG("Premaster secret: [%i]%*s", (int)pre_master_secret_len, (int)pre_master_secret_len, l_util_hexstring(pre_master_secret, pre_master_secret_len));
 
 	tls_tx_handshake(tls, TLS_CLIENT_KEY_EXCHANGE, buf, ptr - buf);
 
@@ -1128,12 +1175,14 @@ static struct tls_bulk_encryption_algorithm tls_aes128 = {
 	.iv_length = 12,
 	.fixed_iv_length = 4,
 	.auth_tag_length = 16,
-}, tls_chacha20_poly1305 = {
+} /*, tls_chacha20_poly1305 = {
 	.cipher_type = TLS_CIPHER_AEAD,
 	.l_aead_id = L_AEAD_CIPHER_CHACHA20_POLY1305,
 	.key_length = 32,
+	.fixed_iv_length = 12,
+	.iv_length = 12,
 	.auth_tag_length = 16,
-};
+}*/;
 
 static struct tls_mac_algorithm tls_sha = {
 	.id = 2,
@@ -1315,13 +1364,24 @@ static struct tls_cipher_suite tls_rsa_with_3des_ede_cbc_sha = {
 	.prf_hmac = L_CHECKSUM_SHA384,
 	.signature = &tls_rsa_signature,
 	.key_xchg = &tls_ecdhe,
-}, tls_ecdhe_psk_with_chacha20_poly1305_sha256 = {
+}, /* tls_ecdhe_psk_with_chacha20_poly1305_sha256 = {
 	.id = { 0xcc, 0xac },
 	.name = "TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256",
-	.verify_data_length = 16,
+	.verify_data_length = 12,
 	.encryption = &tls_chacha20_poly1305,
+	.mac = &tls_sha256,
 	.signature = NULL,
 	.key_xchg = &tls_ecdhe,
+	.psk = true,
+}, */ tls_ecdhe_psk_with_aes_256_cbc_sha256 = {
+	.id = { 0xc0, 0x38 },
+	.name = "TLS_ECDHE_PSK_WITH_AES256_CBC_SHA384",
+	.verify_data_length = 12,
+	.encryption = &tls_aes256,
+	.mac = &tls_sha384,
+	.prf_hmac = L_CHECKSUM_SHA384,
+	.key_xchg = &tls_ecdhe,
+	.psk = true,
 };
 
 struct tls_cipher_suite *tls_cipher_suite_pref[] = {
@@ -1346,6 +1406,7 @@ struct tls_cipher_suite *tls_cipher_suite_pref[] = {
 	&tls_ecdhe_rsa_with_3des_ede_cbc_sha,
 	&tls_dhe_rsa_with_3des_ede_cbc_sha,
 	&tls_rsa_with_3des_ede_cbc_sha,
-	&tls_ecdhe_psk_with_chacha20_poly1305_sha256,
+	//&tls_ecdhe_psk_with_chacha20_poly1305_sha256,
+	&tls_ecdhe_psk_with_aes_256_cbc_sha256,
 	NULL,
 };

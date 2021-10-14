@@ -317,7 +317,7 @@ unit_test_data_files = unit/settings.test unit/dbus.conf
 
 examples = examples/dbus-service examples/https-client-test \
 		examples/https-server-test examples/dbus-client \
-		examples/acd-client
+		examples/acd-client examples/psk-client-test
 
 if GLIB
 examples += examples/glib-eventloop
@@ -328,6 +328,7 @@ noinst_PROGRAMS += $(examples)
 endif
 
 examples_dbus_service_LDADD = ell/libell-private.la
+examples_psk_client_test_LDADD = ell/libell-private.la
 examples_https_client_test_LDADD = ell/libell-private.la
 examples_https_server_test_LDADD = ell/libell-private.la
 examples_dbus_client_LDADD = ell/libell-private.la
