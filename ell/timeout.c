@@ -38,6 +38,7 @@
 #include "timeout.h"
 #include "main-private.h"
 #include "private.h"
+#include "log.h"
 
 /**
  * SECTION:timeout
@@ -61,6 +62,7 @@ struct l_timeout {
 static void timeout_destroy(void *user_data)
 {
 	struct l_timeout *timeout = user_data;
+	l_error("user_data: %p", user_data);
 
 	close(timeout->fd);
 	timeout->fd = -1;
@@ -132,6 +134,8 @@ static struct l_timeout *timeout_create_with_nanoseconds(unsigned int seconds,
 {
 	struct l_timeout *timeout;
 	int err;
+
+	l_error("nanoseconds: %d", nanoseconds);
 
 	if (unlikely(!callback))
 		return NULL;
